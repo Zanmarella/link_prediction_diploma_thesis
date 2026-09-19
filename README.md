@@ -13,7 +13,7 @@
     </tr>
     <tr>
         <td align="left"> <b> Advisor </b> </td>
-        <td> Victor Kitov, PhD/DSc </td>
+        <td> Victor Kitov, PhD </td>
     </tr>
 </table>
 
