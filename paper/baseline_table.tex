@@ -1,0 +1,16 @@
+\begin{table}[H]
+\centering
+\small
+\caption{Test quality at $\rho=1$: mean and sample standard deviation over five seeds.}
+\label{tab:baseline}
+\begin{tabular}{lrrrr}
+\toprule
+Model & Parameters & ROC-AUC & AP & Training BCE \\
+\midrule
+Feature-only MLP & 3393 & $0.594 \pm 0.041$ & $0.575 \pm 0.037$ & 0.476 \\
+Symmetrized & 4609 & $0.529 \pm 0.060$ & $0.527 \pm 0.042$ & 0.646 \\
+Directed & 5825 & $0.723 \pm 0.030$ & $0.655 \pm 0.042$ & 0.483 \\
+Symmetrized (wide) & 5841 & $0.575 \pm 0.050$ & $0.559 \pm 0.035$ & 0.523 \\
+\bottomrule
+\end{tabular}
+\end{table}

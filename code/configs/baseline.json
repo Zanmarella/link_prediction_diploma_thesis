@@ -1,0 +1,19 @@
+{
+  "n_nodes": 180,
+  "edge_probability": 0.15,
+  "feature_noise": 1.0,
+  "feature_dim": 6,
+  "rho_values": [0.0, 0.25, 0.5, 0.75, 1.0],
+  "seeds": [0, 1, 2, 3, 4],
+  "split_fractions": [0.8, 0.1, 0.1],
+  "hidden_dim": 32,
+  "embedding_dim": 32,
+  "decoder_hidden_dim": 32,
+  "models": ["MLP", "Sym", "Dir", "SymWide"],
+  "learning_rate": 0.01,
+  "l2_lambda": 0.0001,
+  "batch_size": 512,
+  "max_epochs": 120,
+  "patience": 25,
+  "threads": 1
+}

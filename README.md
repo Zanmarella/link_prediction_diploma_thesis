@@ -7,7 +7,7 @@
 
 ## Abstract
 
-This study examines the contribution of edge orientation to link prediction with graph neural networks on directed graphs. The objective is to determine when preserving incoming and outgoing neighborhoods improves prediction of missing ordered edges compared with message passing on a symmetrized graph. The proposed comparison uses a feature-only model, a mean-aggregation graph encoder and a directed encoder with separate transformations for incoming and outgoing messages, while retaining a common order-sensitive edge decoder. A synthetic directed graph generator will control the strength of directional structure at fixed graph size and expected density, allowing the effect of orientation to be examined without simultaneously changing the amount of connectivity. Training, validation and test edges will be separated before constructing the message-passing graph, and negative examples will be drawn from absent ordered pairs under a shared sampling protocol. Prediction quality will be measured by the area under the receiver operating characteristic curve and average precision across several random seeds, with common data splits, vertex features and training budgets for all compared models. The resulting protocol is designed to distinguish improvements attributable to directional neighborhood aggregation from those attributable to decoder asymmetry or evaluation choices, and to identify conditions under which a directed encoder warrants further testing on real networks.
+This study examines how retaining edge orientation during message passing affects directed link prediction with graph neural networks. We compare a feature-only multilayer perceptron, a symmetrized mean-aggregation encoder and an encoder with separate incoming and outgoing aggregation, using the same order-sensitive decoder architecture and a further symmetrized control with a matched parameter budget. The synthetic experiment uses 180 vertices with three latent roles and noisy role-related features, while varying directional structure over five levels and retaining the same undirected skeleton and features within each of five random seeds. Unordered vertex pairs are separated into training, validation and test groups, and both orientations of each training query are masked before message passing to prevent direct edge information from entering its prediction. Across 100 model runs, checkpoints are selected by validation average precision and evaluated using test ROC-AUC and average precision under a fixed one-to-one negative sampling ratio. At maximum directional strength, the directed encoder achieves ROC-AUC 0.723 compared with 0.575 for the capacity control, with a paired mean difference of 0.148 across seeds. The advantage is absent at weak directional structure, indicating that orientation-aware aggregation is useful under specific properties of this generating family rather than uniformly beneficial, and motivating subsequent evaluation on real directed networks.
 
 ## Project description
 
@@ -30,6 +30,14 @@ The comparison will use the same data splits, vertex features, training budget, 
 3. Compare a graph-independent model based on vertex features, a graph neural network with symmetrized neighborhoods, and a model with separate incoming and outgoing aggregation.
 4. Vary the strength of directional structure and report prediction quality and variability across random seeds.
 5. Extend the comparison to an open directed graph dataset.
+
+## Baseline result
+
+On the synthetic graph at maximum directional strength, the directed encoder achieves test ROC-AUC **0.723 ± 0.030**, compared with **0.575 ± 0.050** for the symmetrized control with a matched parameter budget (five seeds; mean ± sample standard deviation). The directed encoder has no consistent advantage at weak directional structure.
+
+- [Experiment report](results/REPORT.md)
+- [Numerical results](results/summary.csv)
+- Reproduce: `python code/main.py`
 
 ## Materials
 

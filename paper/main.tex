@@ -7,6 +7,7 @@
 \usepackage{url}
 \usepackage{booktabs}
 \usepackage{float}
+\usepackage{graphicx}
 \usepackage{microtype}
 \usepackage{amsmath,amssymb}
 \hypersetup{hidelinks}
@@ -16,7 +17,7 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-This study examines the contribution of edge orientation to link prediction with graph neural networks on directed graphs. The objective is to determine when preserving incoming and outgoing neighborhoods improves prediction of missing ordered edges compared with message passing on a symmetrized graph. The proposed comparison uses a feature-only model, a mean-aggregation graph encoder and a directed encoder with separate transformations for incoming and outgoing messages, while retaining a common order-sensitive edge decoder. A synthetic directed graph generator will control the strength of directional structure at fixed graph size and expected density, allowing the effect of orientation to be examined without simultaneously changing the amount of connectivity. Training, validation and test edges will be separated before constructing the message-passing graph, and negative examples will be drawn from absent ordered pairs under a shared sampling protocol. Prediction quality will be measured by the area under the receiver operating characteristic curve and average precision across several random seeds, with common data splits, vertex features and training budgets for all compared models. The resulting protocol is designed to distinguish improvements attributable to directional neighborhood aggregation from those attributable to decoder asymmetry or evaluation choices, and to identify conditions under which a directed encoder warrants further testing on real networks.
+This study examines how retaining edge orientation during message passing affects directed link prediction with graph neural networks. We compare a feature-only multilayer perceptron, a symmetrized mean-aggregation encoder and an encoder with separate incoming and outgoing aggregation, using the same order-sensitive decoder architecture and a further symmetrized control with a matched parameter budget. The synthetic experiment uses 180 vertices with three latent roles and noisy role-related features, while varying directional structure over five levels and retaining the same undirected skeleton and features within each of five random seeds. Unordered vertex pairs are separated into training, validation and test groups, and both orientations of each training query are masked before message passing to prevent direct edge information from entering its prediction. Across 100 model runs, checkpoints are selected by validation average precision and evaluated using test ROC-AUC and average precision under a fixed one-to-one negative sampling ratio. At maximum directional strength, the directed encoder achieves ROC-AUC 0.723 compared with 0.575 for the capacity control, with a paired mean difference of 0.148 across seeds. The advantage is absent at weak directional structure, indicating that orientation-aware aggregation is useful under specific properties of this generating family rather than uniformly beneficial, and motivating subsequent evaluation on real directed networks.
 \end{abstract}
 \textbf{Keywords:} directed graphs, graph neural networks, link prediction, edge orientation.
 
@@ -36,12 +37,12 @@ Moreover, reported prediction quality depends on data splits, negative sampling 
 The present study therefore focuses on an encoder comparison with a common order-sensitive decoder and a shared evaluation protocol.
 
 The working hypothesis is that separate incoming and outgoing aggregation improves link prediction when direction carries information about vertex roles.
-The study will compare a feature-only model, a symmetrized mean-aggregation encoder and a directed encoder, and examine how their quality changes as directional structure varies.
+The study compares a feature-only model, a symmetrized mean-aggregation encoder and a directed encoder, and examine how their quality changes as directional structure varies.
 The contribution sought is a controlled characterization of this dependence; the study does not propose a new message-passing architecture.
 
-The first experiment will use synthetic static graphs with fixed size and expected density and adjustable directional structure.
-The compared models will receive identical vertex features, data splits and sampled negative pairs for each random seed.
-ROC-AUC and average precision will measure prediction quality, with validation used for model selection and the test set reserved for final evaluation.
+The first experiment uses synthetic static graphs with fixed size and expected density and adjustable directional structure.
+The compared models receive identical vertex features, data splits and sampled negative pairs for each random seed.
+ROC-AUC and average precision measure prediction quality, with validation used for model selection and the test set reserved for final evaluation.
 This experiment is intended to identify the conditions under which preserving orientation is useful before extending the comparison to an open real-world graph.
 
 \begin{table}[H]
@@ -97,8 +98,8 @@ The initial study therefore considers static directed edge recovery with shared 
 
 \paragraph{Scope of the comparison.}
 The study focuses on a controlled comparison of directional neighborhood aggregation.
-A common order-sensitive decoder will be used with feature-only, symmetrized and directed encoders.
-The synthetic experiment will vary directional structure while keeping graph size and expected density fixed, with prediction quality summarized across random seeds.
+A common order-sensitive decoder is used with feature-only, symmetrized and directed encoders.
+The synthetic experiment varies directional structure while keeping graph size and expected density fixed, with prediction quality summarized across random seeds.
 This design separates the contribution of the encoder from decoder asymmetry and evaluation choices.
 
 \section{Directed edge recovery}
@@ -135,10 +136,10 @@ $\theta=(\phi,\psi)$ & Encoder and decoder parameters \\
 \end{tabular}
 \end{table}
 
-Synthetic instances will be sampled from a family $P_\rho$ that varies directional structure while keeping $n$ and $\mathbb E_\rho|E|$ fixed.
-The generator will specify the vertex roles, feature distribution and edge probabilities explicitly.
+Synthetic instances are sampled from a family $P_\rho$ that varies directional structure while keeping $n$ and the undirected skeleton fixed across $\rho$.
+The generating distribution is specified in Section~\ref{sec:experiment}.
 The initial comparison assumes that these roles influence connectivity and that vertex features provide noisy information about them.
-For each $\rho$, graph instances, splits and initialization seeds will be recorded.
+For each $\rho$, graph instances, splits and initialization seeds are recorded.
 Conclusions from this setting are restricted to the specified generating family.
 
 \subsection{Training graph and labeled pairs}
@@ -154,7 +155,7 @@ Each labeled sample is
 \end{equation}
 The message-passing adjacency satisfies $(A_{\mathrm{tr}})_{uv}=\mathbf 1\{(u,v)\in E_{\mathrm{tr}}\}$.
 Validation and test labels are never supplied to the encoder, including through symmetrization or feature construction.
-For each training batch, its positive query edges and any corresponding reverse edges are removed from the message-passing graph before computing the loss.
+For each training batch, both orientations of every query pair are removed from the message-passing graph before computing the loss, including reverse edges of negative queries.
 At validation and test time the encoder uses the fixed training graph only.
 
 \subsection{Model class}
@@ -173,7 +174,7 @@ The directed encoder aggregates incoming and outgoing neighborhoods separately:
 \end{equation}
 Mean aggregation over an empty neighborhood is defined as the zero vector.
 Both graph encoders retain a separate self-feature transformation, use the same number of layers and are derived from the GraphSAGE and Dir-GNN designs~\cite{sage,dirgnn}.
-Their widths and parameter counts will be reported, with an additional parameter-budget control to assess the effect of model capacity.
+Their widths and parameter counts are reported, with an additional parameter-budget control to assess the effect of model capacity.
 
 All encoders use the same decoder architecture and input ordering:
 \begin{equation}
@@ -188,7 +189,7 @@ The decoder permits $p_\theta^{(m)}(u,v;A)\ne p_\theta^{(m)}(v,u;A)$, without re
 The internal criterion is mean binary cross-entropy with $L_2$ regularization, where $\lambda>0$ is fixed within a comparison.
 The encoder parameters and decoder parameters are optimized jointly.
 Let $\mathfrak B$ be a recorded partition of $\mathcal D_{\mathrm{tr}}$ into batches.
-For each batch $B$, let $A_{\mathrm{tr}}^{(-B)}$ be the training adjacency with its positive query edges and their reverse edges removed.
+For each batch $B$, let $A_{\mathrm{tr}}^{(-B)}$ be the training adjacency with both orientations of every query pair removed, regardless of its label.
 The batch-specific probability and binary cross-entropy are
 \begin{equation}
 \begin{split}
@@ -201,7 +202,7 @@ The external criteria are ROC-AUC and average precision (AP), computed on the sa
 AP is the sum of precision values at successive score thresholds weighted by the corresponding increments in recall.
 ROC-AUC is the probability that a positive example is ranked above a negative one, counting ties as one half.
 The negative-to-positive ratio is fixed at $1:1$; AP values therefore describe this sampled evaluation distribution.
-Hyperparameters and checkpoints are selected by validation AP, using identical search and optimization budgets across the compared encoders.
+Hyperparameters are fixed in the initial experiment; checkpoints are selected by validation AP under a common maximum epoch count and early-stopping rule.
 Test labels are used only for final evaluation.
 
 For $K$ recorded random seeds, the comparison reports the mean and sample standard deviation of each test metric.
@@ -227,7 +228,78 @@ For a model $m$ and a fixed hyperparameter configuration, the training problem i
 \label{eq:objective}
 \end{equation}
 
+
+\section{Baseline experiment}
+\label{sec:experiment}
+\paragraph{Objective.}
+The experiment tests whether directional neighborhood aggregation improves recovery of missing ordered edges when orientation reflects latent vertex roles.
+The skeleton, features and evaluation protocol are controlled to distinguish this effect from changes in graph size or model capacity.
+
+\paragraph{Generating distribution.}
+There are $n=180$ vertices with three equally sized roles $c_v\in\{0,1,2\}$ assigned by a random permutation.
+For every unordered pair $\{u,v\}$, a skeleton edge is independently sampled with probability $q=0.15$.
+Each sampled edge receives exactly one orientation, with
+\begin{equation}
+\Pr(u\to v\mid\{u,v\}\text{ sampled},c_u,c_v)
+=\frac{1+\rho C_{c_u c_v}}2,\qquad
+C=\begin{pmatrix}0&1&-1\\-1&0&1\\1&-1&0\end{pmatrix}.
+\end{equation}
+At $\rho=0$ orientation is random; at $\rho=1$ edges between different roles follow the cycle $0\to1\to2\to0$.
+Within-role edges retain random orientation.
+The same skeleton and orientation uniforms are reused across $\rho$ within each seed, so the total edge count is unchanged.
+The expected number of edges is $q n(n-1)/2=2416.5$.
+Features are $x_v=e_{c_v}+\varepsilon_v\in\mathbb R^6$, where $e_c$ is the coordinate vector for role $c$ among the first three coordinates and $\varepsilon_v\sim\mathcal N(0,I_6)$ independently.
+Role indices are not supplied to the encoders.
+Realized graphs contain 2324--2474 directed edges.
+
+\paragraph{Models and settings.}
+The experiment uses $\rho\in\{0,0.25,0.5,0.75,1\}$ and seeds $0,\ldots,4$.
+All encoders have two ReLU layers and produce 32-dimensional vertex embeddings.
+Their common decoder is a $64\to32\to1$ MLP applied to ordered concatenations, with a ReLU hidden activation.
+MLP, Sym and Dir use hidden width 32.
+SymWide uses hidden width 48, matching Dir's total parameter count to within 1\% while retaining the same output dimension and decoder architecture.
+Sym and Dir implement mean aggregation with separate self-feature transformations following GraphSAGE and Dir-GNN~\cite{sage,dirgnn}.
+
+Adam uses learning rate $0.01$, $\lambda=10^{-4}$ and batches of at most 512 labeled pairs.
+Training is limited to 120 epochs and stops after 25 epochs without an improvement in validation AP.
+The best validation-AP checkpoint is selected; no hyperparameter search is performed.
+The dyad split and query masking follow Section~\ref{sec:problem}.
+Each model uses identical samples within each graph instance.
+The implementation uses deterministic CPU operations with one thread.
+
+\paragraph{Results.}
+Table~\ref{tab:baseline} reports the maximum-direction setting; Figure~\ref{fig:orientation} includes every tested $\rho$.
+At $\rho=1$, Dir improves over the capacity control by $0.148 \pm 0.020$ in ROC-AUC and $0.095 \pm 0.009$ in AP (paired means and sample standard deviations).
+At weak directional structure, the directed encoder has no consistent advantage.
+The main separation occurs at $\rho=1$, supporting the hypothesis for this generating family rather than a uniform benefit from direction-aware aggregation.
+The results do not establish superiority on real-world graphs.
+\input{baseline_table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figures/orientation_effect.pdf}
+\caption{Test quality versus directional structure. Error bars show sample standard deviations over five seeds. All models use the same ordered-pair decoder architecture.}
+\label{fig:orientation}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/loss_curves.pdf}
+\caption{Loss curves for seed 0 at $\rho=1$. Solid lines show validation BCE; dashed lines show mean batch training BCE during each epoch. Early stopping is based on validation AP, not BCE.}
+\label{fig:loss}
+\end{figure}
+
+\paragraph{Reproduction.}
+The command \texttt{python code/main.py} regenerates the data, numerical results and figures.
+Configuration is stored in \texttt{code/configs/baseline.json}; the plotting module reads saved numerical results independently of training.
+Per-run metrics, losses, epochs, parameter counts and timings are retained in CSV files, with software versions and source hashes in \texttt{results/metadata.json}.
+Total training and evaluation time for the 100 runs was 71.9 seconds on the recorded CPU environment; file writing and plotting are excluded.
+The hypothesis sketch is retained separately as \texttt{paper/figures/expected\_curve.pdf} and contains no experimental measurements.
+
+\begingroup
+\small
 \interlinepenalty=10000
 \bibliographystyle{unsrtnat}
 \bibliography{references}
+\endgroup
 \end{document}
