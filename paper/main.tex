@@ -6,6 +6,7 @@
 \usepackage{hyperref}
 \usepackage{url}
 \usepackage{booktabs}
+\usepackage{float}
 \usepackage{microtype}
 \usepackage{amsmath,amssymb}
 \hypersetup{hidelinks}
@@ -18,6 +19,46 @@
 This study examines the contribution of edge orientation to link prediction with graph neural networks on directed graphs. The objective is to determine when preserving incoming and outgoing neighborhoods improves prediction of missing ordered edges compared with message passing on a symmetrized graph. The proposed comparison uses a feature-only model, a mean-aggregation graph encoder and a directed encoder with separate transformations for incoming and outgoing messages, while retaining a common order-sensitive edge decoder. A synthetic directed graph generator will control the strength of directional structure at fixed graph size and expected density, allowing the effect of orientation to be examined without simultaneously changing the amount of connectivity. Training, validation and test edges will be separated before constructing the message-passing graph, and negative examples will be drawn from absent ordered pairs under a shared sampling protocol. Prediction quality will be measured by the area under the receiver operating characteristic curve and average precision across several random seeds, with common data splits, vertex features and training budgets for all compared models. The resulting protocol is designed to distinguish improvements attributable to directional neighborhood aggregation from those attributable to decoder asymmetry or evaluation choices, and to identify conditions under which a directed encoder warrants further testing on real networks.
 \end{abstract}
 \textbf{Keywords:} directed graphs, graph neural networks, link prediction, edge orientation.
+
+\section{Introduction}
+Directed graphs describe relations in which exchanging the source and target changes the meaning of an edge, as in citation and hyperlink networks.
+Link prediction on such graphs requires estimating the existence of an ordered edge rather than merely deciding whether two vertices are connected.
+The objective of this study is to assess how retaining edge orientation during neighborhood aggregation affects this prediction task.
+
+GraphSAGE provides a simple inductive aggregation mechanism~\cite{sage}, while Dir-GNN explicitly separates incoming and outgoing neighborhoods~\cite{dirgnn}.
+Spectral approaches such as MagNet encode direction through complex-valued operators~\cite{magnet}.
+For link prediction, gravity-inspired and directed graph autoencoders additionally introduce asymmetric scoring functions~\cite{gravity,digae}.
+These studies establish relevant encoder and decoder designs, but the contribution of each component must be distinguished in a comparison.
+
+An asymmetric decoder can assign different scores to reversed pairs even when its input embeddings were obtained from a symmetrized graph.
+Conversely, a symmetric inner-product decoder cannot express this distinction solely because its encoder preserves orientation~\cite{vgae,complex}.
+Moreover, reported prediction quality depends on data splits, negative sampling and baseline tuning~\cite{heart}.
+The present study therefore focuses on an encoder comparison with a common order-sensitive decoder and a shared evaluation protocol.
+
+The working hypothesis is that separate incoming and outgoing aggregation improves link prediction when direction carries information about vertex roles.
+The study will compare a feature-only model, a symmetrized mean-aggregation encoder and a directed encoder, and examine how their quality changes as directional structure varies.
+The contribution sought is a controlled characterization of this dependence; the study does not propose a new message-passing architecture.
+
+The first experiment will use synthetic static graphs with fixed size and expected density and adjustable directional structure.
+The compared models will receive identical vertex features, data splits and sampled negative pairs for each random seed.
+ROC-AUC and average precision will measure prediction quality, with validation used for model selection and the test set reserved for final evaluation.
+This experiment is intended to identify the conditions under which preserving orientation is useful before extending the comparison to an open real-world graph.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Reference approaches and their role in the comparison.}
+\label{tab:alternatives}
+\begin{tabular}{p{0.22\textwidth}p{0.33\textwidth}p{0.35\textwidth}}
+\toprule
+Approach & Strength & Limitation for this comparison \\
+\midrule
+GraphSAGE~\cite{sage} & Simple inductive neighborhood aggregation & Symmetrization discards the orientation of messages. \\
+Dir-GNN~\cite{dirgnn} & Separates incoming and outgoing neighborhoods & Its classification results do not establish link-prediction gains. \\
+Gravity-inspired autoencoder~\cite{gravity} & Scores ordered pairs asymmetrically & Changing the decoder does not isolate the effect of the encoder. \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \section{Related work}
 \paragraph{Message passing.}
@@ -59,6 +100,132 @@ The study focuses on a controlled comparison of directional neighborhood aggrega
 A common order-sensitive decoder will be used with feature-only, symmetrized and directed encoders.
 The synthetic experiment will vary directional structure while keeping graph size and expected density fixed, with prediction quality summarized across random seeds.
 This design separates the contribution of the encoder from decoder asymmetry and evaluation choices.
+
+\section{Directed edge recovery}
+\label{sec:problem}
+Given a partially observed directed graph and vertex features, the task is to predict whether an ordered pair of distinct vertices forms an edge.
+The initial setting is transductive: all vertices are available during training, but validation and test edges are withheld.
+Graphs are static, unweighted and contain a single edge type; self-loops are excluded from the prediction task.
+
+\subsection{Data and notation}
+Let $V=\{1,\ldots,n\}$ and let $\mathcal U=\{(u,v)\in V^2:u\ne v\}$ be the candidate ordered pairs.
+The full synthetic graph is $G=(V,E)$, where $E\subseteq\mathcal U$, and $X\in\mathbb R^{n\times d}$ contains vertex features.
+The target is $y_{uv}=\mathbf 1\{(u,v)\in E\}$.
+In particular, $y_{uv}$ and $y_{vu}$ need not coincide; a reversed edge is not automatically a negative example.
+For synthetic graphs, absent pairs have known labels under the specified generator.
+
+\begin{table}[H]
+\centering
+\small
+\caption{Notation used in the problem statement.}
+\label{tab:notation}
+\begin{tabular}{ll}
+\toprule
+Symbol & Meaning \\
+\midrule
+$G=(V,E)$ & Full synthetic directed graph \\
+$X,\ x_v$ & Feature matrix and feature vector of vertex $v$ \\
+$\rho\in[0,1]$ & Strength of directional structure in the graph generator \\
+$E_{\mathrm{tr}},E_{\mathrm{va}},E_{\mathrm{te}}$ & Training, validation and test positive edges \\
+$N_{\mathrm{tr}},N_{\mathrm{va}},N_{\mathrm{te}}$ & Corresponding sampled negative ordered pairs \\
+$A_{\mathrm{tr}}$ & Adjacency matrix of the training graph \\
+$H,\ h_v$ & Embedding matrix and embedding of vertex $v$ \\
+$\theta=(\phi,\psi)$ & Encoder and decoder parameters \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+Synthetic instances will be sampled from a family $P_\rho$ that varies directional structure while keeping $n$ and $\mathbb E_\rho|E|$ fixed.
+The generator will specify the vertex roles, feature distribution and edge probabilities explicitly.
+The initial comparison assumes that these roles influence connectivity and that vertex features provide noisy information about them.
+For each $\rho$, graph instances, splits and initialization seeds will be recorded.
+Conclusions from this setting are restricted to the specified generating family.
+
+\subsection{Training graph and labeled pairs}
+Unordered vertex pairs $\{u,v\}$ are randomly partitioned into training, validation and test groups with proportions $0.8$, $0.1$ and $0.1$.
+Both orientations of a pair belong to the same group.
+Positive sets $E_s$ contain the edges in group $s\in\{\mathrm{tr},\mathrm{va},\mathrm{te}\}$.
+Negative sets $N_s$ are sampled uniformly without replacement from absent ordered pairs in that group, with $|N_s|=|E_s|$.
+Thus positive and negative examples are disjoint across splits and reciprocal positive edges cannot occur in different splits.
+Each labeled sample is
+\begin{equation}
+\mathcal D_s=\{(u,v,1):(u,v)\in E_s\}
+\cup\{(u,v,0):(u,v)\in N_s\}.
+\end{equation}
+The message-passing adjacency satisfies $(A_{\mathrm{tr}})_{uv}=\mathbf 1\{(u,v)\in E_{\mathrm{tr}}\}$.
+Validation and test labels are never supplied to the encoder, including through symmetrization or feature construction.
+For each training batch, its positive query edges and any corresponding reverse edges are removed from the message-passing graph before computing the loss.
+At validation and test time the encoder uses the fixed training graph only.
+
+\subsection{Model class}
+For $m\in\mathcal M=\{\mathrm{MLP},\mathrm{Sym},\mathrm{Dir}\}$ and an adjacency matrix $A$, the encoder produces
+$H=f^{(m)}_\phi(X,A)\in\mathbb R^{n\times h}$.
+The neighborhoods below refer to $A_{\mathrm{tr}}$; for a masked adjacency they are formed from the remaining edges.
+The feature-only model processes each $x_v$ independently.
+The symmetrized encoder aggregates over
+$\mathcal N_{\mathrm{sym}}(v)=\{u:(u,v)\in E_{\mathrm{tr}}\text{ or }(v,u)\in E_{\mathrm{tr}}\}$.
+The directed encoder aggregates incoming and outgoing neighborhoods separately:
+\begin{equation}
+\begin{split}
+\mathcal N_{\mathrm{in}}(v)&=\{u:(u,v)\in E_{\mathrm{tr}}\},\\
+\mathcal N_{\mathrm{out}}(v)&=\{u:(v,u)\in E_{\mathrm{tr}}\}.
+\end{split}
+\end{equation}
+Mean aggregation over an empty neighborhood is defined as the zero vector.
+Both graph encoders retain a separate self-feature transformation, use the same number of layers and are derived from the GraphSAGE and Dir-GNN designs~\cite{sage,dirgnn}.
+Their widths and parameter counts will be reported, with an additional parameter-budget control to assess the effect of model capacity.
+
+All encoders use the same decoder architecture and input ordering:
+\begin{equation}
+p_\theta^{(m)}(u,v;A)=\sigma\!\left(g_\psi([h_u\Vert h_v])\right),
+\qquad \sigma(z)=(1+e^{-z})^{-1}.
+\end{equation}
+Here $[h_u\Vert h_v]$ denotes concatenation and $g_\psi$ is a multilayer perceptron with a scalar output.
+Its parameters are learned separately for each model; the architecture is shared, not the fitted weights.
+The decoder permits $p_\theta^{(m)}(u,v;A)\ne p_\theta^{(m)}(v,u;A)$, without requiring this inequality for every pair.
+
+\subsection{Quality criteria and model selection}
+The internal criterion is mean binary cross-entropy with $L_2$ regularization, where $\lambda>0$ is fixed within a comparison.
+The encoder parameters and decoder parameters are optimized jointly.
+Let $\mathfrak B$ be a recorded partition of $\mathcal D_{\mathrm{tr}}$ into batches.
+For each batch $B$, let $A_{\mathrm{tr}}^{(-B)}$ be the training adjacency with its positive query edges and their reverse edges removed.
+The batch-specific probability and binary cross-entropy are
+\begin{equation}
+\begin{split}
+q_{\theta,B}^{(m)}(u,v)&=p_\theta^{(m)}(u,v;A_{\mathrm{tr}}^{(-B)}),\\
+\ell(y,p)&=-y\log p-(1-y)\log(1-p).
+\end{split}
+\end{equation}
+
+The external criteria are ROC-AUC and average precision (AP), computed on the same labeled pairs for all models.
+AP is the sum of precision values at successive score thresholds weighted by the corresponding increments in recall.
+ROC-AUC is the probability that a positive example is ranked above a negative one, counting ties as one half.
+The negative-to-positive ratio is fixed at $1:1$; AP values therefore describe this sampled evaluation distribution.
+Hyperparameters and checkpoints are selected by validation AP, using identical search and optimization budgets across the compared encoders.
+Test labels are used only for final evaluation.
+
+For $K$ recorded random seeds, the comparison reports the mean and sample standard deviation of each test metric.
+The directional effect is summarized by paired differences
+\begin{equation}
+\Delta_M(\rho)=\frac1K\sum_{k=1}^{K}
+\left(M^{(k)}_{\mathrm{Dir}}(\rho)-M^{(k)}_{\mathrm{Sym}}(\rho)\right),
+\qquad M\in\{\mathrm{ROC\mbox{-}AUC},\mathrm{AP}\},
+\end{equation}
+using the same graph instance, features, split and negative pairs within each seed.
+A positive difference indicates improved performance under that configuration; an advantage is not assumed for every $\rho$.
+
+For a model $m$ and a fixed hyperparameter configuration, the training problem is
+\begin{equation}
+\boxed{
+\theta_m^*\in\operatorname*{arg\,min}_{\theta\in\Theta_m}
+\left\{
+\frac{1}{|\mathcal D_{\mathrm{tr}}|}
+\sum_{B\in\mathfrak B}\sum_{(u,v,y)\in B}
+\ell\!\left(y,q_{\theta,B}^{(m)}(u,v)\right)
++\lambda\|\theta\|_2^2
+\right\}.}
+\label{eq:objective}
+\end{equation}
 
 \interlinepenalty=10000
 \bibliographystyle{unsrtnat}
