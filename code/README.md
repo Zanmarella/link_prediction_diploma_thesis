@@ -16,6 +16,18 @@ python code/main.py
 
 The command generates the data, trains the models, saves numerical results and builds the figures. Configuration is stored in [configs/baseline.json](configs/baseline.json). Runs use deterministic CPU operations with one thread. Execution times and platform metadata can differ across machines.
 
+To include compilation of the article and one-slide PDF (requires TeX Live with Beamer and `latexmk`):
+
+```bash
+python code/main.py --build-pdfs
+```
+
+The reporting module generates the LaTeX table and numerical macros directly from saved measurements. To rebuild them without training:
+
+```bash
+python code/reporting.py
+```
+
 To rebuild figures from saved results:
 
 ```bash
@@ -63,5 +75,6 @@ The encoder designs follow [GraphSAGE](https://arxiv.org/abs/1706.02216) and [Di
 - `results/learning_curves.csv`: training and validation losses and validation AP by epoch.
 - `results/metadata.json`: configuration, software versions and source hashes.
 - `paper/figures/`: the orientation comparison, loss curves and hypothesis sketch.
+- `paper/baseline_table.tex` and `paper/experiment_numbers.tex`: generated table and numerical values for the article and slide.
 
 Training curves record mean batch BCE during an epoch. The `train_bce` field in `runs.csv` is recomputed at the selected checkpoint with query masking; `train_objective` also includes the L2 penalty. Error bars in the comparison figure show sample standard deviations, not confidence intervals.

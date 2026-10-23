@@ -47,8 +47,9 @@
   "source_sha256": {
     "data.py": "23c4abe670bef3aceeb5559601c1691d3bf32917cc850ca79dbf2f7eaf57ef84",
     "experiment.py": "cc2cdd883e59884e6f85b945c12e197fd268a5d7d18e2520d3d273e2b6a029cb",
-    "main.py": "1bea687635646974a030958aef29f4f14c128f6cd15431a33f115891cfc55a13",
+    "main.py": "d545348e46d73eeeae61dacd14096cfc6828821c6067584c67d5399e61f38920",
     "models.py": "f50e43f47280f813c056374de6dc570b733c8fe50f54e11a35943243633d9e27",
-    "plot_results.py": "3b56865399f0ae3482cebe8214044bebe48f3efae9145812c179f2ea750068ba"
+    "plot_results.py": "ebc88eb27617cace69666d84cba69bdcb693b63aa2f4a1565553c88a65fdad93",
+    "reporting.py": "dddc1d3265bcb6dadb194c7fbcdb49eab6e996771f9776bf3d98a83fb6562d8c"
   }
 }

@@ -70,6 +70,54 @@ def plot_all(root):
     ax.grid(alpha=.2)
     ax.legend(frameon=False, fontsize=8)
     save(fig, root, "loss_curves")
+    plot_one_slide(root)
+    plot_data(root)
+
+
+def plot_one_slide(root):
+    """Main comparison for a single-slide presentation."""
+    with (root / "results/summary.csv").open() as f:
+        rows = list(csv.DictReader(f))
+    with plt.rc_context({"font.size": 15, "axes.labelsize": 16, "legend.fontsize": 13}):
+        fig, ax = plt.subplots(figsize=(6.5, 4.5), layout="constrained")
+        for mode, label, color in (("Dir", "Directed aggregation", COLORS["Dir"]),
+                                   ("SymWide", "Symmetrized control", COLORS["SymWide"])):
+            selected = [r for r in rows if r["model"] == mode]
+            ax.errorbar([float(r["rho"]) for r in selected],
+                        [float(r["test_auc_mean"]) for r in selected],
+                        yerr=[float(r["test_auc_std"]) for r in selected],
+                        color=color, label=label, marker="o", markersize=6,
+                        linewidth=2.4, capsize=4)
+        ax.set(xlabel=r"Directional structure $\rho$", ylabel="Test ROC-AUC",
+               xticks=[0, .25, .5, .75, 1], xlim=(-.04, 1.04), ylim=(.45, .80))
+        ax.legend(frameon=False, loc="upper left")
+        ax.grid(alpha=.18)
+        save(fig, root, "one_slide_chart")
+
+
+def plot_data(root):
+    """Show the actual training adjacency, sorted by the generating roles."""
+    config = json.loads((root / "results/metadata.json").read_text())["config"]
+    seed, rho = config["seeds"][0], max(config["rho_values"])
+    path = root / "data" / f"synthetic_seed{seed}_rho{rho:.2f}.npz"
+    with np.load(path) as data:
+        order = np.argsort(data["roles"], kind="stable")
+        a = (data["adjacency"] * (data["pair_split"] == 0))[np.ix_(order, order)]
+    from matplotlib.colors import ListedColormap
+    fig, axes = plt.subplots(1, 2, figsize=(8.5, 3.8), layout="constrained")
+    n = len(order)
+    for ax, matrix, title in zip(axes, (a, (a + a.T) > 0),
+                                ("Directed training adjacency", "Symmetrized training adjacency")):
+        ax.imshow(matrix, cmap=ListedColormap(["white", COLORS["Sym"]]),
+                  vmin=0, vmax=1, interpolation="nearest", rasterized=True)
+        ax.set(xticks=[n / 6 - .5, n / 2 - .5, 5 * n / 6 - .5],
+               yticks=[n / 6 - .5, n / 2 - .5, 5 * n / 6 - .5],
+               xticklabels=["0", "1", "2"], yticklabels=["0", "1", "2"],
+               xlabel=r"Target role $c_v$", ylabel=r"Source role $c_u$", title=title)
+        for pos in (n / 3 - .5, 2 * n / 3 - .5):
+            ax.axhline(pos, color="0.75", linewidth=.6)
+            ax.axvline(pos, color="0.75", linewidth=.6)
+    save(fig, root, "data_example")
 
 
 if __name__ == "__main__":

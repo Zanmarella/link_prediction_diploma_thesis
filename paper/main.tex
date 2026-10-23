@@ -12,12 +12,13 @@
 \usepackage{amsmath,amssymb}
 \hypersetup{hidelinks}
 \urlstyle{same}
+\input{experiment_numbers}
 \title{A Study of Edge Orientation in Graph Neural Networks for Link Prediction}
 \author{Nikita Scheglov\\Advisor: Victor Kitov, PhD}
 \begin{document}
 \maketitle
 \begin{abstract}
-This study examines how retaining edge orientation during message passing affects directed link prediction with graph neural networks. We compare a feature-only multilayer perceptron, a symmetrized mean-aggregation encoder and an encoder with separate incoming and outgoing aggregation, using the same order-sensitive decoder architecture and a further symmetrized control with a matched parameter budget. The synthetic experiment uses 180 vertices with three latent roles and noisy role-related features, while varying directional structure over five levels and retaining the same undirected skeleton and features within each of five random seeds. Unordered vertex pairs are separated into training, validation and test groups, and both orientations of each training query are masked before message passing to prevent direct edge information from entering its prediction. Across 100 model runs, checkpoints are selected by validation average precision and evaluated using test ROC-AUC and average precision under a fixed one-to-one negative sampling ratio. At maximum directional strength, the directed encoder achieves ROC-AUC 0.723 compared with 0.575 for the capacity control, with a paired mean difference of 0.148 across seeds. The advantage is absent at weak directional structure, indicating that orientation-aware aggregation is useful under specific properties of this generating family rather than uniformly beneficial, and motivating subsequent evaluation on real directed networks.
+This study examines how retaining edge orientation during message passing affects directed link prediction with graph neural networks. We compare a feature-only multilayer perceptron, a symmetrized mean-aggregation encoder and an encoder with separate incoming and outgoing aggregation, using the same order-sensitive decoder architecture and a further symmetrized control with a matched parameter budget. The synthetic experiment uses \ExperimentN\ vertices with three latent roles and noisy role-related features, while varying directional structure over five levels and retaining the same undirected skeleton and features within each of \ExperimentSeedCount\ random seeds. Unordered vertex pairs are separated into training, validation and test groups, and both orientations of each training query are masked before message passing to prevent direct edge information from entering its prediction. Across \ExperimentRunCount\ model runs, checkpoints are selected by validation average precision and evaluated using test ROC-AUC and average precision under a fixed one-to-one negative sampling ratio. At maximum directional strength, the directed encoder achieves ROC-AUC \DirectedAUCMean\ compared with \ControlAUCMean\ for the capacity control, with a paired mean difference of \DeltaAUCMean\ across seeds. The advantage is absent at weak directional structure, indicating that orientation-aware aggregation is useful under specific properties of this generating family rather than uniformly beneficial, and motivating subsequent evaluation on real directed networks.
 \end{abstract}
 \textbf{Keywords:} directed graphs, graph neural networks, link prediction, edge orientation.
 
@@ -236,7 +237,7 @@ The experiment tests whether directional neighborhood aggregation improves recov
 The skeleton, features and evaluation protocol are controlled to distinguish this effect from changes in graph size or model capacity.
 
 \paragraph{Generating distribution.}
-There are $n=180$ vertices with three equally sized roles $c_v\in\{0,1,2\}$ assigned by a random permutation.
+There are $n=\ExperimentN$ vertices with three equally sized roles $c_v\in\{0,1,2\}$ assigned by a random permutation.
 For every unordered pair $\{u,v\}$, a skeleton edge is independently sampled with probability $q=0.15$.
 Each sampled edge receives exactly one orientation, with
 \begin{equation}
@@ -250,7 +251,14 @@ The same skeleton and orientation uniforms are reused across $\rho$ within each 
 The expected number of edges is $q n(n-1)/2=2416.5$.
 Features are $x_v=e_{c_v}+\varepsilon_v\in\mathbb R^6$, where $e_c$ is the coordinate vector for role $c$ among the first three coordinates and $\varepsilon_v\sim\mathcal N(0,I_6)$ independently.
 Role indices are not supplied to the encoders.
-Realized graphs contain 2324--2474 directed edges.
+Realized graphs contain \EdgeMin--\EdgeMax\ directed edges.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.88\textwidth]{figures/data_example.pdf}
+\caption{Training adjacency for seed 0 at maximum directional strength, sorted by the generating roles. A colored cell denotes an edge from a row vertex to a column vertex. Symmetrization retains connectivity and removes orientation. The role labels serve only to illustrate the data.}
+\label{fig:data}
+\end{figure}
 
 \paragraph{Models and settings.}
 The experiment uses $\rho\in\{0,0.25,0.5,0.75,1\}$ and seeds $0,\ldots,4$.
@@ -269,7 +277,7 @@ The implementation uses deterministic CPU operations with one thread.
 
 \paragraph{Results.}
 Table~\ref{tab:baseline} reports the maximum-direction setting; Figure~\ref{fig:orientation} includes every tested $\rho$.
-At $\rho=1$, Dir improves over the capacity control by $0.148 \pm 0.020$ in ROC-AUC and $0.095 \pm 0.009$ in AP (paired means and sample standard deviations).
+At $\rho=\ExperimentRhoMax$, Dir improves over the capacity control by $\DeltaAUCMean \pm \DeltaAUCSD$ in ROC-AUC and $\DeltaAPMean \pm \DeltaAPSD$ in AP (paired means and sample standard deviations).
 At weak directional structure, the directed encoder has no consistent advantage.
 The main separation occurs at $\rho=1$, supporting the hypothesis for this generating family rather than a uniform benefit from direction-aware aggregation.
 The results do not establish superiority on real-world graphs.
@@ -293,7 +301,7 @@ The results do not establish superiority on real-world graphs.
 The command \texttt{python code/main.py} regenerates the data, numerical results and figures.
 Configuration is stored in \texttt{code/configs/baseline.json}; the plotting module reads saved numerical results independently of training.
 Per-run metrics, losses, epochs, parameter counts and timings are retained in CSV files, with software versions and source hashes in \texttt{results/metadata.json}.
-Total training and evaluation time for the 100 runs was 71.9 seconds on the recorded CPU environment; file writing and plotting are excluded.
+Total training and evaluation time for the \ExperimentRunCount\ runs was \ExperimentSeconds\ seconds on the recorded CPU environment; file writing and plotting are excluded.
 The hypothesis sketch is retained separately as \texttt{paper/figures/expected\_curve.pdf} and contains no experimental measurements.
 
 \begingroup

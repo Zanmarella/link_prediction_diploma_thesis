@@ -45,6 +45,16 @@ On the synthetic graph at maximum directional strength, the directed encoder ach
 - [Code](code)
 - [Paper source](paper/main.tex) · [PDF](paper/main.pdf)
 - [Slides source](slides/main.tex) · [PDF](slides/main.pdf)
+- [One-minute talk](slides/talk_ru.md)
+
+## Reproduction
+
+```bash
+python -m pip install -r code/requirements.txt
+python code/main.py
+```
+
+To compile the article and one-slide PDF as part of the same run, use `python code/main.py --build-pdfs` with TeX Live, Beamer and `latexmk` installed. Plotting and LaTeX tables can also be rebuilt from saved results through `code/plot_results.py` and `code/reporting.py`.
 
 ## License
 

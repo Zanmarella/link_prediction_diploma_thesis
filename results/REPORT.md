@@ -25,7 +25,7 @@ At rho = 1, the directed model reaches ROC-AUC 0.723 ± 0.030 and AP 0.655 ± 0.
 
 The directed encoder does not show a consistent advantage at weak directional structure. The main separation occurs at rho = 1. This is evidence for the specified synthetic generator and protocol, not a claim of superiority on real-world benchmarks.
 
-Cumulative training and evaluation time: 71.9 seconds on CPU with one thread; data generation, file writing and plotting are excluded. Individual timings are recorded in `runs.csv`.
+Per-run training and evaluation timings on CPU with one thread are recorded in `runs.csv`; data generation, file writing and plotting are excluded.
 
 ![Test quality versus directional strength](../paper/figures/orientation_effect.png)
 
