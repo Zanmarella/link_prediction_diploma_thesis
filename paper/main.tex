@@ -1,144 +1,66 @@
 \documentclass{article}
-
-\PassOptionsToPackage{numbers, sort, compress}{natbib}
-\usepackage[main,final]{neurips_2025}
-
+\PassOptionsToPackage{numbers,sort,compress}{natbib}
+\usepackage[preprint]{neurips_2025}
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{hyperref}
 \usepackage{url}
 \usepackage{booktabs}
-\usepackage{nicefrac}
 \usepackage{microtype}
-\usepackage{xcolor}
-
-%%%
-
-\usepackage{subcaption}
-\usepackage{graphicx}
-\usepackage{multirow}
-\usepackage{amsmath,amssymb,amsfonts}
-\usepackage{amsthm}
-\usepackage{mathrsfs}
-\usepackage{xcolor}
-\usepackage{textcomp}
-\usepackage{manyfoot}
-\usepackage{algorithm}
-\usepackage{algorithmicx}
-\usepackage{algpseudocode}
-\usepackage{listings}
-
-\newtheorem{theorem}{Theorem} % continuous numbers
-%%\newtheorem{theorem}{Theorem}[section] % sectionwise numbers
-%% optional argument [theorem] produces theorem numbering sequence instead of independent numbers for Proposition
-\newtheorem{proposition}[theorem]{Proposition}% 
-\newtheorem{lemma}{Lemma}% 
-%%\newtheorem{proposition}{Proposition} % to get separate numbers for theorem and proposition etc.
-
-\newtheorem{example}{Example}
-\newtheorem{remark}{Remark}
-
-\newtheorem{definition}{Definition}
-\newtheorem{assumption}{Assumption}
-
-%%%
-
-
-\title{Title}
-
-
-% The \author macro works with any number of authors. There are two commands
-% used to separate the names and addresses of multiple authors: \And and \AND.
-%
-% Using \And between authors leaves it to LaTeX to determine where to break the
-% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
-% authors names on the first line, and the last on the second line, try using
-% \AND instead of \And before the third author name.
-
-
-\author{
-  Name Surname\\
-  MIPT\\
-  Moscow, Russia\\
-  \texttt{email@phystech.edu}\\
-  \And
-  Name Surname\\
-  MIPT\\
-  Moscow, Russia\\
-  \texttt{email@phystech.edu}\\
-}
-
-
+\usepackage{amsmath,amssymb}
+\hypersetup{hidelinks}
+\urlstyle{same}
+\title{A Study of Edge Orientation in Graph Neural Networks for Link Prediction}
+\author{Nikita Scheglov\\Advisor: Victor Kitov, PhD}
 \begin{document}
-
-
 \maketitle
-
 \begin{abstract}
-    TODO
+This study examines the contribution of edge orientation to link prediction with graph neural networks on directed graphs. The objective is to determine when preserving incoming and outgoing neighborhoods improves prediction of missing ordered edges compared with message passing on a symmetrized graph. The proposed comparison uses a feature-only model, a mean-aggregation graph encoder and a directed encoder with separate transformations for incoming and outgoing messages, while retaining a common order-sensitive edge decoder. A synthetic directed graph generator will control the strength of directional structure at fixed graph size and expected density, allowing the effect of orientation to be examined without simultaneously changing the amount of connectivity. Training, validation and test edges will be separated before constructing the message-passing graph, and negative examples will be drawn from absent ordered pairs under a shared sampling protocol. Prediction quality will be measured by the area under the receiver operating characteristic curve and average precision across several random seeds, with common data splits, vertex features and training budgets for all compared models. The resulting protocol is designed to distinguish improvements attributable to directional neighborhood aggregation from those attributable to decoder asymmetry or evaluation choices, and to identify conditions under which a directed encoder warrants further testing on real networks.
 \end{abstract}
+\textbf{Keywords:} directed graphs, graph neural networks, link prediction, edge orientation.
 
-\textbf{Keywords:} TODO
+\section{Related work}
+\paragraph{Message passing.}
+Message-passing networks separate message construction, neighborhood aggregation and readout~\cite{mpnn}.
+GCN, GraphSAGE and GAT provide standard aggregation mechanisms~\cite{gcn,sage,gat}, while GIN and GATv2 clarify the expressive limitations of aggregation and attention~\cite{gin,gatv2}.
+Mean aggregation offers a simple reference for comparing a shared undirected neighborhood with separate incoming and outgoing neighborhoods.
 
-\section{Introduction}\label{sec:intro}
+\paragraph{Directed representations.}
+Dir-GNN separates incoming and outgoing messages and studies their benefit for node classification~\cite{dirgnn}.
+DGCN and DiGCN incorporate directed proximity and diffusion~\cite{dgcn,digcn}, whereas DEDGAT and ADPA distinguish directional roles and patterns~\cite{dedgat,adpa}.
+These classification results motivate a directed encoder but do not establish an improvement in link prediction.
+MagNet encodes orientation through a magnetic Laplacian~\cite{magnet}; MSGNN and SigMaNet extend spectral modeling to signed directed graphs~\cite{msgnn,sigmanet}.
+DUPLEX combines directional attention and complex embeddings~\cite{duplex}.
+DiGCL and S2-DiGCL introduce contrastive learning for directed representations~\cite{digcl,s2digcl}.
+Directed positional encodings provide another route to retaining directional structure~\cite{digtransformer,multiq}.
 
-TODO
+\paragraph{Asymmetric decoding.}
+The standard inner-product decoder of a variational graph autoencoder assigns identical scores to reversed pairs~\cite{vgae}.
+Gravity-inspired autoencoders introduce an asymmetric decoder~\cite{gravity}, while directed graph autoencoders learn source and target representations~\cite{digae}.
+LINE and node2vec provide alternative network-embedding references~\cite{line,node2vec}.
+For a fixed relation, DistMult uses a symmetric score; ComplEx can represent asymmetric relations~\cite{distmult,complex}.
+Consequently, directed message passing and asymmetric edge scoring are distinct design choices.
 
-\textbf{Contributions.} Our contributions can be summarized as follows:
-\begin{itemize}
-    \item We present...
-    \item We demonstrate the validity of our theoretical results through empirical studies...
-    \item We highlight the implications of our findings for...
-\end{itemize}
+\paragraph{Pairwise structure.}
+SEAL predicts links from enclosing subgraphs, whereas NBFNet learns query-dependent path representations~\cite{seal,nbfnet}.
+Neo-GNNs and Neural Common Neighbor exploit neighborhood overlap~\cite{neognn,ncn}; ELPH and BUDDY approximate link-specific structure through sketching~\cite{buddy}.
+TNCN extends common-neighbor representations to temporal graphs~\cite{tncn}.
+These approaches motivate structural controls, but introduce additional mechanisms beyond changing edge orientation in the encoder.
 
-\textbf{Outline.} The rest of the paper is organized as follows...
+\paragraph{Data and evaluation.}
+H2GCN and LINKX study learning beyond homophily~\cite{h2gcn,linkx}; heterophily and edge directionality should be treated as separate properties.
+Platonov et al. identify dataset weaknesses and leakage in heterophily evaluation~\cite{critical}.
+OGB supplies task-specific splits and evaluation protocols~\cite{ogb}, and HeaRT highlights the sensitivity of link prediction to tuning, splits and negative sampling~\cite{heart}.
+Dynamic link-prediction protocols and TGB benchmarks further demonstrate the importance of matching evaluation to the prediction task~\cite{dynamic_eval,tgb,tgb2}.
+The initial study therefore considers static directed edge recovery with shared splits and negative examples; temporal and multi-relational prediction are separate extensions.
 
-\section{Related Work}\label{sec:rw}
+\paragraph{Scope of the comparison.}
+The study focuses on a controlled comparison of directional neighborhood aggregation.
+A common order-sensitive decoder will be used with feature-only, symmetrized and directed encoders.
+The synthetic experiment will vary directional structure while keeping graph size and expected density fixed, with prediction quality summarized across random seeds.
+This design separates the contribution of the encoder from decoder asymmetry and evaluation choices.
 
-\textbf{Topic \#1.}
-TODO
-
-\textbf{Topic \#2.}
-TODO
-
-\section{Preliminaries}\label{sec:prelim}
-
-\subsection{General notation}
-
-In this section, we introduce the general notation used in the rest of the paper and the basic assumptions. 
-
-\subsection{Assumptions} 
-
-TODO
-
-\section{Method}\label{sec:method}
-
-\section{Experiments}\label{sec:exp}
-
-To verify the theoretical estimates obtained, we conducted a detailed empirical study...
-
-\section{Discussion}\label{sec:disc}
-
-TODO
-
-\section{Conclusion}\label{sec:concl}
-
-TODO
-
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+\interlinepenalty=10000
 \bibliographystyle{unsrtnat}
 \bibliography{references}
-
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-\newpage
-\appendix
-\section{Appendix / supplemental material}\label{app}
-
-\subsection{Additional experiments / Proofs of Theorems}\label{app:exp}
-
-TODO
-
 \end{document}
