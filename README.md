@@ -1,44 +1,39 @@
 # A Study of Edge Orientation in Graph Neural Networks for Link Prediction
 
-<!-- Change `kisnikser/m1p-template` to `intsystems/your-repository`-->
-[![License](https://badgen.net/github/license/kisnikser/m1p-template?color=green)](https://github.com/kisnikser/m1p-template/blob/main/LICENSE)
-[![GitHub Contributors](https://img.shields.io/github/contributors/kisnikser/m1p-template)](https://github.com/kisnikser/m1p-template/graphs/contributors)
-[![GitHub Issues](https://img.shields.io/github/issues-closed/kisnikser/m1p-template.svg?color=0088ff)](https://github.com/kisnikser/m1p-template/issues)
-[![GitHub Pull Requests](https://img.shields.io/github/issues-pr-closed/kisnikser/m1p-template.svg?color=7f29d6)](https://github.com/kisnikser/m1p-template/pulls)
+| | |
+| --- | --- |
+| Author | Nikita Scheglov |
+| Advisor | Victor Kitov, PhD |
 
-<table>
-    <tr>
-        <td align="left"> <b> Author </b> </td>
-        <td> Nikita Scheglov </td>
-    </tr>
-    <tr>
-        <td align="left"> <b> Advisor </b> </td>
-        <td> Victor Kitov, PhD </td>
-    </tr>
-</table>
+## Project description
 
-## Assets
+This project studies the effect of edge orientation on link prediction with graph neural networks. The task is to estimate the probability of a directed edge between an ordered pair of vertices using the observed graph and, when available, vertex features.
 
-- [LinkReview](LINKREVIEW.md)
+The study compares message passing on the original directed graph with message passing on its symmetrized version. Incoming and outgoing neighborhoods are considered separately in the directed model.
+
+## Objective and hypothesis
+
+**Objective.** Assess how retaining edge orientation during message passing affects directed link prediction quality.
+
+**Hypothesis.** Separate aggregation of incoming and outgoing neighbors improves prediction quality when edge direction carries information about vertex roles.
+
+The comparison will use the same data splits, vertex features, training budget, and an order-sensitive edge decoder. Quality will be evaluated using ROC-AUC and average precision over several random seeds.
+
+## Initial experimental plan
+
+1. Construct a small synthetic directed graph with a specified distribution of edges between vertex groups.
+2. Split observed edges into training, validation, and test sets. Use training edges only to construct the message-passing graph; sample negative examples from absent ordered pairs.
+3. Compare a graph-independent model based on vertex features, a graph neural network with symmetrized neighborhoods, and a model with separate incoming and outgoing aggregation.
+4. Vary the strength of directional structure and report prediction quality and variability across random seeds.
+5. Extend the comparison to an open directed graph dataset.
+
+## Materials
+
+- [Literature review](LINKREVIEW.md)
 - [Code](code)
-- [Paper](paper/main.pdf)
-- [Slides](slides/main.pdf)
+- [Paper source](paper/main.tex) · [PDF](paper/main.pdf)
+- [Slides source](slides/main.tex) · [PDF](slides/main.pdf)
 
-## Abstract
+## License
 
-TODO
-
-## Citation
-
-If you find our work helpful, please cite us.
-```BibTeX
-@article{citekey,
-    title={Title},
-    author={Name Surname, Name Surname (consultant), Name Surname (advisor)},
-    year={2025}
-}
-```
-
-## Licence
-
-Our project is MIT licensed. See [LICENSE](LICENSE) for details.
+This project is distributed under the [MIT License](LICENSE).
